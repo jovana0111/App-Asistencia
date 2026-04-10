@@ -402,7 +402,7 @@ export default function EmpleadosScreen() {
                   ))}
                 </View>
               )}
-              <Pressable style={[s.addEmpBtn, editingEmpId && { backgroundColor: colors.secondary }]} onPress={handleAddEmpleado}>
+              <Pressable style={[s.addEmpBtn, editingEmpId ? { backgroundColor: colors.secondary } : null]} onPress={handleAddEmpleado}>
                 {editingEmpId ? <Check size={16} color="#fff" /> : <UserPlus size={16} color="#fff" />}
                 <Text style={s.addEmpBtnText}>{editingEmpId ? "Guardar Cambios" : "Registrar Empleado"}</Text>
               </Pressable>
