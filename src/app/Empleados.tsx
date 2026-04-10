@@ -1,4 +1,4 @@
-import { Check, Grid, User, UserPlus, Users } from "lucide-react";
+import { Check, Edit2, Grid, Trash2, User, UserPlus, Users, X } from "lucide-react";
 import { useState } from "react";
 import {
   Alert,
@@ -17,12 +17,13 @@ import { useColors } from "../hooks/useColors";
 
 export default function EmpleadosScreen() {
   const colors = useColors();
-  const { areas, empleados, addArea, addEmpleado } = useApp();
+  const { areas, empleados, addArea, addEmpleado, updateEmpleado, deleteEmpleado } = useApp();
 
   const [nuevaArea, setNuevaArea] = useState("");
   const [nuevoEmp, setNuevoEmp] = useState("");
   const [areaSelId, setAreaSelId] = useState<string>("");
   const [tab, setTab] = useState<"areas" | "empleados">("areas");
+  const [editingEmpId, setEditingEmpId] = useState<string | null>(null);
 
   const handleAddArea = () => {
     if (!nuevaArea.trim()) {
@@ -42,8 +43,39 @@ export default function EmpleadosScreen() {
       Alert.alert("Error", "Selecciona un area");
       return;
     }
-    addEmpleado(nuevoEmp, areaSelId);
+    
+    if (editingEmpId) {
+      updateEmpleado(editingEmpId, nuevoEmp, areaSelId);
+      setEditingEmpId(null);
+    } else {
+      addEmpleado(nuevoEmp, areaSelId);
+    }
+    
     setNuevoEmp("");
+  };
+
+  const handleEdit = (emp: any) => {
+    setEditingEmpId(emp.id);
+    setNuevoEmp(emp.nombre);
+    setAreaSelId(emp.areaId);
+    setTab("empleados");
+  };
+
+  const handleDelete = (id: string) => {
+    Alert.alert(
+      "Eliminar Empleado",
+      "¿Estas seguro de eliminar este empleado?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        { text: "Eliminar", style: "destructive", onPress: () => deleteEmpleado(id) }
+      ]
+    );
+  };
+
+  const cancelEdit = () => {
+    setEditingEmpId(null);
+    setNuevoEmp("");
+    setAreaSelId("");
   };
 
   const s = StyleSheet.create({
@@ -333,7 +365,14 @@ export default function EmpleadosScreen() {
           </>
         ) : (
           <>
-            <Text style={s.sectionLabel}>Nuevo empleado</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginRight: 16 }}>
+              <Text style={s.sectionLabel}>{editingEmpId ? "Editar empleado" : "Nuevo empleado"}</Text>
+              {editingEmpId && (
+                <Pressable onPress={cancelEdit} style={{ marginTop: 8 }}>
+                  <Text style={{ fontSize: 11, color: colors.destructive, fontWeight: '700' }}>CANCELAR EDICION</Text>
+                </Pressable>
+              )}
+            </View>
             <View style={s.card}>
               <Text style={s.fieldLabel}>Nombre completo</Text>
               <TextInput
@@ -363,9 +402,9 @@ export default function EmpleadosScreen() {
                   ))}
                 </View>
               )}
-              <Pressable style={s.addEmpBtn} onPress={handleAddEmpleado}>
-                <UserPlus size={16} color="#fff" />
-                <Text style={s.addEmpBtnText}>Registrar Empleado</Text>
+              <Pressable style={[s.addEmpBtn, editingEmpId && { backgroundColor: colors.secondary }]} onPress={handleAddEmpleado}>
+                {editingEmpId ? <Check size={16} color="#fff" /> : <UserPlus size={16} color="#fff" />}
+                <Text style={s.addEmpBtnText}>{editingEmpId ? "Guardar Cambios" : "Registrar Empleado"}</Text>
               </Pressable>
             </View>
 
@@ -391,6 +430,14 @@ export default function EmpleadosScreen() {
                       <View style={{ flex: 1 }}>
                         <Text style={s.listItemName}>{emp.nombre}</Text>
                         <Text style={s.listItemSub}>{area?.nombre ?? "Sin area"}</Text>
+                      </View>
+                      <View style={{ flexDirection: 'row', gap: 10 }}>
+                        <Pressable onPress={() => handleEdit(emp)}>
+                          <Edit2 size={16} color={colors.mutedForeground} />
+                        </Pressable>
+                        <Pressable onPress={() => handleDelete(emp.id)}>
+                          <Trash2 size={16} color={colors.destructive} />
+                        </Pressable>
                       </View>
                     </View>
                   );

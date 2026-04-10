@@ -6,6 +6,116 @@ import {
   useState,
 } from "react";
 
+const EMPLEADOS_DEFAULT = [
+  "ADAME GUTIERREZ ALMA GABRIELA",
+  "AGUILAR CARREON ANA GENOVEVA",
+  "AGUILAR CARREON ISIDRA",
+  "ALEJANDRO FALCON",
+  "ANA LILIA VELAZQUEZ GOMEZ",
+  "ANDRADE MORA HUGO CESAR",
+  "APARICIO VELAZQUEZ ANGEL ADOLFO",
+  "ARISTEO SILVA TORRES",
+  "BAUTISTA",
+  "BRIONES ROBLES MIGUEL ANGEL",
+  "CALZADA ORTIZ NANCY EDITH",
+  "CAMPOS VARGAS JULIO",
+  "CANALES MENA EDUARDO YONATHAN",
+  "CAPUCHINO DELGADO JUAN DE LA CRUZ",
+  "CARRERAS BAEZ CELENA",
+  "CASTORENA CONTRERAS SERGIO EMMANUEL",
+  "CASTORENA CONTRERAS VICTOR ALFONSO",
+  "CELENA",
+  "CHAVARRIA MACIAS ROBERTO DANIEL",
+  "CHRISTOPHER BERNAL",
+  "CRUZ GARCIA MIGUEL ANGEL",
+  "CRUZ TRUJILLO JESUS ALEJANDRO",
+  "CUELLAR MACIAS CESAR",
+  "DAVDI",
+  "DE LA CRUZ VILLA MARIA GUADALUPE",
+  "DE SANTIAGO GARCIA JOSE ALFREDO",
+  "DELGADO ARANDA JUAN ANDRES",
+  "DELGADO RODRIGUEZ LUIS JULIAN",
+  "DUEÑAS HUERTA JUAN CARLOS",
+  "DUEÑAS MONTOYA JUAN DIEGO",
+  "DUEÑAS VALADEZ MICHELLE SARAHI",
+  "DURON JUAN ORLANDO",
+  "EDUARDO",
+  "ERIK RAUL ALBA BRIONES",
+  "ESPARZA DE LOERA ANA ROSA",
+  "ESPARZA RODRIGUEZ ULISES IVAN",
+  "ESQUIVEL AVILA SERGIO ALEJANDRO",
+  "GARCIA ESQUIVEL MIGUEL",
+  "GARCIA JOSE REFUGIO",
+  "GARCIA MARES JOSE DE JESUS",
+  "GARCIA RAMOS MARCO ANTONIO",
+  "GONZALEZ BRANDO FILIBERTO",
+  "GONZALEZ ELIZALDE MARIELA",
+  "GUILLEN MANRRIQUEZ RAUL URIEL",
+  "GUSTAVO",
+  "GUTIERREZ HERNANDEZ DIANA LIZETH",
+  "GUTIERREZ HERNANDEZ MIREYA",
+  "HERNANDEZ JIMENEZ PEDRO",
+  "HERNANDEZ TORRES VIRIDIANA",
+  "HERRADA ALBA JONATHAN GEOVANNI",
+  "HERRERA CORDOVA ANA ROSA",
+  "HERRERA MORENO JUANA NIEVES",
+  "HERRERA RUVALCABA AYDE GUADALUPE",
+  "IBARRA RUVALCABA DAVID EDUARDO",
+  "JOVANA",
+  "JUANA",
+  "JUAREZ CHABLE ROSA ANGELICA",
+  "JUAREZ CHABLE SERGIO CECILIO",
+  "LARA DE LUNA GONZALO",
+  "LAZARIN RODRIGUEZ BRAULIO",
+  "LOPEZ MOYA JUANA MARIA",
+  "LOYOLA GARCIA ALAN RAMON",
+  "LUCIANA",
+  "MACIAS BRENDA NALLELY",
+  "MANUEL BUENROSTRO",
+  "MARCIAL LUEVANO HARON ORACIO",
+  "MARTINEZ RODRIGUEZ JAIME",
+  "MARTINEZ RODRIGUEZ TERESA DE JESUS",
+  "MELENDEZ CAPUCHINO VICTOR MANUEL",
+  "MORENO DE LA ROSA SAMUEL IVAN",
+  "MUÑOZ GUERRERO BRAYAN EDUARDO",
+  "MUÑOZ HERNANDEZ MARIA DEL CARMEN",
+  "NOEL NUÑEZ JORGE FABIAN",
+  "NORMA DE LOERA",
+  "NUÑEZ SALINAS WALTER GUSTAVO",
+  "OMAR ALFREDO ARELLANO",
+  "ORTIZ GUZMAN DANIEL ISRAEL",
+  "PEREZ ROCHA DIANA JACQUELINE",
+  "PIÑA CHAVEZ KAREN LIZETH",
+  "RAMIREZ CRUZ JUAN JESUS",
+  "RAMIREZ GONZALEZ MARCO ANTONIO",
+  "RAMIREZ HERNANDEZ FERNANDA ZOE",
+  "RAMIREZ MARTINEZ JESSICA JOANNA",
+  "RANGEL AREVALO RAUL OSBALDO",
+  "REYES OVALLE DANIEL",
+  "REYES TAVARES LINDA ISAURA",
+  "RIVERA FRANCISCO JAVIER",
+  "RIVERA RAMOS DAYANA SOFIA",
+  "RIVERA RAMOS JHOAN DE JESUS",
+  "RODRIGUEZ DONDIEGO ALVARO MATEO",
+  "RODRIGUEZ FRANCO EZEQUIEL DE JESUS",
+  "ROMERO SAUL FIDEL",
+  "SAMUEL ACEVES",
+  "SANCHEZ CAMILO JONATHA DANIEL",
+  "SANTANA ZAMARRIPA ARIANA",
+  "SAUCEDO LOMELI EDUARDO",
+  "TAVARES GUTIERREZ HECTOR MANUEL",
+  "TORRES DE LA CRUZ ADAN",
+  "VAZQUEZ LOPEZ OSCAR HUMBERTO",
+  "VELAZQUEZ CAPUCHINO JOSE ARMANDO",
+  "VELAZQUEZ GONZALES TERESA",
+  "VENEGAS LUIS ENRIQUE",
+  "VICTOR",
+  "ZACARIAS RAMOS GLORIA",
+  "ZAPATA ESCOBAR JOSE EMILIANO",
+  "ZARATE TORRES ANGEL ANDRES",
+  "ZAVALA SALAS JOSE ALFREDO",
+];
+
 export interface Area {
   id: string;
   nombre: string;
@@ -34,6 +144,8 @@ interface AppContextType {
   registros: RegistroAsistencia[];
   addArea: (nombre: string) => void;
   addEmpleado: (nombre: string, areaId: string) => void;
+  updateEmpleado: (id: string, nombre: string, areaId: string) => void;
+  deleteEmpleado: (id: string) => void;
   addRegistro: (registro: RegistroAsistencia) => void;
   deleteRegistro: (id: string) => void;
   clearRegistros: () => void;
@@ -63,10 +175,46 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const areasStr = localStorage.getItem(STORAGE_KEYS.AREAS);
       const empleadosStr = localStorage.getItem(STORAGE_KEYS.EMPLEADOS);
       const registrosStr = localStorage.getItem(STORAGE_KEYS.REGISTROS);
-      
-      if (areasStr) setAreas(JSON.parse(areasStr));
-      if (empleadosStr) setEmpleados(JSON.parse(empleadosStr));
-      if (registrosStr) setRegistros(JSON.parse(registrosStr));
+
+      let loadedAreas: Area[] = areasStr ? JSON.parse(areasStr) : [];
+      let loadedEmpleados: Empleado[] = empleadosStr ? JSON.parse(empleadosStr) : [];
+      let loadedRegistros: RegistroAsistencia[] = registrosStr ? JSON.parse(registrosStr) : [];
+
+      // Cargar empleados por defecto si no se han cargado antes
+      const defaultsLoaded = localStorage.getItem("asistencia_defaults_loaded");
+      if (!defaultsLoaded) {
+        let generalArea = loadedAreas.find(
+          (a) => a.nombre.toUpperCase() === "GENERAL"
+        );
+        if (!generalArea) {
+          generalArea = { id: genId(), nombre: "GENERAL" };
+          loadedAreas.push(generalArea);
+        }
+
+        EMPLEADOS_DEFAULT.forEach((nombre) => {
+          const exists = loadedEmpleados.some(
+            (e) => e.nombre.toLowerCase() === nombre.toLowerCase()
+          );
+          if (!exists) {
+            loadedEmpleados.push({
+              id: genId() + Math.random().toString(36).substr(2, 5),
+              nombre: nombre.trim(),
+              areaId: generalArea!.id,
+            });
+          }
+        });
+
+        localStorage.setItem("asistencia_defaults_loaded", "true");
+        localStorage.setItem(STORAGE_KEYS.AREAS, JSON.stringify(loadedAreas));
+        localStorage.setItem(
+          STORAGE_KEYS.EMPLEADOS,
+          JSON.stringify(loadedEmpleados)
+        );
+      }
+
+      setAreas(loadedAreas);
+      setEmpleados(loadedEmpleados);
+      setRegistros(loadedRegistros);
     } catch {}
   };
 
@@ -97,6 +245,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     (nombre: string, areaId: string) => {
       const nuevo: Empleado = { id: genId(), nombre: nombre.trim(), areaId };
       const updated = [...empleados, nuevo];
+      setEmpleados(updated);
+      saveEmpleados(updated);
+    },
+    [empleados]
+  );
+
+  const updateEmpleado = useCallback(
+    (id: string, nombre: string, areaId: string) => {
+      const updated = empleados.map((e) =>
+        e.id === id ? { ...e, nombre: nombre.trim(), areaId } : e
+      );
+      setEmpleados(updated);
+      saveEmpleados(updated);
+    },
+    [empleados]
+  );
+
+  const deleteEmpleado = useCallback(
+    (id: string) => {
+      const updated = empleados.filter((e) => e.id !== id);
       setEmpleados(updated);
       saveEmpleados(updated);
     },
@@ -178,6 +346,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         registros,
         addArea,
         addEmpleado,
+        updateEmpleado,
+        deleteEmpleado,
         addRegistro,
         deleteRegistro,
         clearRegistros,
