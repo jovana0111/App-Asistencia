@@ -1,0 +1,27 @@
+kind = "mobile"
+previewPath = "/"
+title = "Control de Asistencia"
+version = "1.0.0"
+id = "artifacts/asistencia"
+router = "expo-domain"
+
+[[integratedSkills]]
+name = "expo"
+version = "1.0.0"
+
+[[services]]
+ensurePreviewReachable = "/status"
+name = "expo"
+paths = [ "/" ]
+localPort = 22906
+
+[services.development]
+run = "pnpm --filter @workspace/asistencia run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/asistencia", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/asistencia", "run", "serve" ]
+
+[services.env]
+PORT = "22906"
+BASE_PATH = "/"
