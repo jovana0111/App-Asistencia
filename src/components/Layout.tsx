@@ -1,5 +1,4 @@
-import React from "react";
-import { View, StyleSheet, Pressable, Text, Platform } from "react-native";
+import { View, StyleSheet, Pressable, Text } from "react-native";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { Clock, Users, List as ListIcon } from "lucide-react";
 import { useColors } from "../hooks/useColors";

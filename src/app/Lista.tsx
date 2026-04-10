@@ -1,5 +1,5 @@
 import { Trash2, Trash, Clipboard, Download, Clock } from "lucide-react";
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   Alert,
   FlatList,
@@ -298,7 +298,7 @@ export default function ListaScreen() {
     <View style={s.container}>
       <View style={s.header}>
         <Image
-          source={logo}
+          source={logo as any}
           style={s.logo}
           resizeMode="contain"
         />
@@ -346,7 +346,7 @@ export default function ListaScreen() {
       <FlatList
         style={s.list}
         data={registrosFiltrados}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item: RegistroAsistencia) => item.id}
         renderItem={renderRow}
         scrollEnabled={registrosFiltrados.length > 0}
         ListEmptyComponent={
@@ -365,10 +365,10 @@ export default function ListaScreen() {
 
       {registros.length > 0 && (
         <Pressable
-          style={({ pressed }) => [
-            s.exportBtn,
-            pressed && { opacity: 0.85 },
-          ]}
+        style={({ pressed }: { pressed: boolean }) => [
+          s.exportBtn,
+          pressed && { opacity: 0.85 },
+        ]}
           onPress={handleExportar}
         >
           <Download size={18} color="#fff" />

@@ -1,5 +1,5 @@
 import { Check, Grid, User, UserPlus, Users } from "lucide-react";
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   Alert,
   Pressable,
@@ -256,7 +256,7 @@ export default function EmpleadosScreen() {
     <View style={s.container}>
       <View style={s.header}>
         <Image
-          source={logo}
+          source={logo as any}
           style={s.logo}
           resizeMode="contain"
         />

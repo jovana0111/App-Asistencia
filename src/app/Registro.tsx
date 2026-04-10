@@ -1,8 +1,7 @@
-import { Clock, User, PlusCircle } from "lucide-react";
-import React, { useCallback, useState } from "react";
+import { User, PlusCircle } from "lucide-react";
+import { useCallback, useState } from "react";
 import {
   Alert,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -249,7 +248,7 @@ export default function RegistroScreen() {
     <View style={s.container}>
       <View style={s.header}>
         <Image
-          source={logo}
+          source={logo as any}
           style={s.logo}
           resizeMode="contain"
         />
@@ -313,7 +312,7 @@ export default function RegistroScreen() {
         <Text style={s.sectionLabel}>Turno y horario</Text>
         <View style={s.card}>
           <View style={s.turnoRow}>
-            {TURNOS.map((turno, idx) => (
+            {TURNOS.map((_, idx) => (
               <Pressable
                 key={idx}
                 style={[s.turnoBtn, turnoIdx === idx && s.turnoBtnActive]}
@@ -341,7 +340,7 @@ export default function RegistroScreen() {
       </ScrollView>
 
       <Pressable
-        style={({ pressed }) => [
+        style={({ pressed }: { pressed: boolean }) => [
           s.addBtn,
           pressed && { opacity: 0.88 },
         ]}
