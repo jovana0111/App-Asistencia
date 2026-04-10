@@ -1,4 +1,4 @@
-import { Check, Edit2, Grid, Trash2, User, UserPlus, Users, X } from "lucide-react";
+import { Check, Edit2, Grid, Trash2, User, UserPlus, Users } from "lucide-react";
 import { useState } from "react";
 import {
   Alert,
@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import logo from "../../assets/images/logo.png";
 
-import { useApp } from "../context/AppContext";
+import { useApp, Empleado } from "../context/AppContext";
 import { useColors } from "../hooks/useColors";
 
 export default function EmpleadosScreen() {
@@ -54,7 +54,7 @@ export default function EmpleadosScreen() {
     setNuevoEmp("");
   };
 
-  const handleEdit = (emp: any) => {
+  const handleEdit = (emp: Empleado) => {
     setEditingEmpId(emp.id);
     setNuevoEmp(emp.nombre);
     setAreaSelId(emp.areaId);
