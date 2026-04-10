@@ -1,19 +1,22 @@
 # Stage 1: Build
 FROM node:18-slim AS build
 
+# Habillitar corepack para pnpm
+RUN corepack enable
+
 WORKDIR /app
 
-# Copiar package.json y pnpm-lock.yaml (si existe) o package-lock.json
-COPY package*.json ./
+# Copiar package.json y pnpm-lock.yaml
+COPY package.json pnpm-lock.yaml ./
 
-# Instalar dependencias
-RUN npm install
+# Instalar dependencias con pnpm
+RUN pnpm install --frozen-lockfile
 
 # Copiar el resto del código
 COPY . .
 
 # Construir la aplicación
-RUN npm run build
+RUN pnpm build
 
 # Stage 2: Serve
 FROM nginx:alpine
