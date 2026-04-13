@@ -8,35 +8,38 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Configuración de Odoo (Idealmente usar variables de entorno)
+// Configuración de Odoo
 const ODOO_CONFIG = {
-    url: 'https://srv.seishin.com.mx',
+    host: 'srv.seishin.com.mx',
+    port: 443,
     db: 'testcont1',
     username: 'admin',
     apiKey: '1234'
 };
 
-const getClient = (path) => {
-    const isHttps = ODOO_CONFIG.url.startsWith('https');
-    return xmlrpc.createSecureClient(ODOO_CONFIG.url + path);
-};
+// Clientes XML-RPC robustos
+const common = xmlrpc.createSecureClient({ host: ODOO_CONFIG.host, port: ODOO_CONFIG.port, path: '/xmlrpc/2/common' });
+const models = xmlrpc.createSecureClient({ host: ODOO_CONFIG.host, port: ODOO_CONFIG.port, path: '/xmlrpc/2/object' });
 
-// Endpoint para traer empleados
+console.log('--- Servidor Proxy Odoo Iniciado ---');
+console.log(`Configurado para: ${ODOO_CONFIG.host} | DB: ${ODOO_CONFIG.db}`);
+
+// Traer Empleados
 app.get('/api/empleados', (req, res) => {
-    const common = getClient('/xmlrpc/2/common');
-    const models = getClient('/xmlrpc/2/object');
-
-    console.log('Autenticando en Odoo...');
+    console.log('[GET] /api/empleados - Autenticando...');
+    
     common.methodCall('authenticate', [ODOO_CONFIG.db, ODOO_CONFIG.username, ODOO_CONFIG.apiKey, {}], (err, uid) => {
         if (err) {
-            console.error('Auth Error:', err);
-            return res.status(500).json({ error: 'Error de autenticación', details: err.message });
+            console.error('Error de red Odoo:', err);
+            return res.status(500).json({ error: 'Error de red con Odoo', details: err.message });
         }
-        if (!uid || uid === false) {
-            return res.status(401).json({ error: 'Credenciales incorrectas' });
+        if (uid === false) {
+            console.error('Autenticación fallida');
+            return res.status(401).json({ error: 'Credenciales de Odoo incorrectas' });
         }
 
-        console.log('UID obtenido:', uid, '. Consultando empleados...');
+        console.log(`Autenticado. UID: ${uid}. Consultando empleados...`);
+        
         models.methodCall('execute_kw', [
             ODOO_CONFIG.db,
             uid,
@@ -45,27 +48,27 @@ app.get('/api/empleados', (req, res) => {
             'search_read',
             [[['active', '=', true]]],
             {
-                fields: ['name', 'display_name', 'department_id', 'work_phone'],
-                limit: 100
+                fields: ['id', 'name', 'display_name', 'department_id', 'work_phone', 'barcode', 'job_id'],
+                limit: 500
             }
-        ], (err, empleados) => {
+        ], (err, employees) => {
             if (err) {
-                console.error('Model Error:', err);
-                return res.status(500).json({ error: 'Error al consultar empleados', details: err.message });
+                console.error('Error de consulta:', err);
+                return res.status(500).json({ error: 'Error al leer empleados', details: err.message });
             }
-            res.json(empleados);
+            console.log(`Enviando ${employees.length} empleados.`);
+            res.json(employees);
         });
     });
 });
 
-// Endpoint para registrar asistencia
+// Registrar Asistencia
 app.post('/api/asistencia', (req, res) => {
+    console.log('[POST] /api/asistencia - Recibido:', req.body.employee_id);
     const payload = req.body;
-    const common = getClient('/xmlrpc/2/common');
-    const models = getClient('/xmlrpc/2/object');
 
     common.methodCall('authenticate', [ODOO_CONFIG.db, ODOO_CONFIG.username, ODOO_CONFIG.apiKey, {}], (err, uid) => {
-        if (err || !uid) return res.status(401).json({ error: 'Autenticación fallida' });
+        if (err || !uid) return res.status(401).json({ error: 'Fallo de autenticación' });
 
         models.methodCall('execute_kw', [
             ODOO_CONFIG.db,
@@ -75,13 +78,17 @@ app.post('/api/asistencia', (req, res) => {
             'create',
             [payload]
         ], (err, result) => {
-            if (err) return res.status(500).json({ error: 'Error al crear asistencia', details: err.message });
+            if (err) {
+                console.error('Error al registrar asistencia:', err);
+                return res.status(500).json({ error: 'No se pudo registrar en Odoo' });
+            }
+            console.log('Asistencia registrada con éxito en Odoo ID:', result);
             res.json({ success: true, id: result });
         });
     });
 });
 
-// Servir archivos estáticos en producción
+// Servir App en Producción
 const DIST_PATH = path.join(__dirname, '../dist');
 app.use(express.static(DIST_PATH));
 app.get('*', (req, res) => {
@@ -92,5 +99,5 @@ app.get('*', (req, res) => {
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-    console.log(`Servidor Proxy Odoo corriendo en puerto ${PORT}`);
+    console.log(`>>> PROXY ODOO LISTO EN EL PUERTO ${PORT}`);
 });
