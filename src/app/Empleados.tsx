@@ -348,37 +348,22 @@ export default function EmpleadosScreen() {
         </Pressable>
       </View>
 
+
       <ScrollView style={s.scroll}>
         {tab === "areas" ? (
           <>
-            <Text style={s.sectionLabel}>Nueva area</Text>
-            <View style={s.card}>
-              <Text style={s.fieldLabel}>Nombre del area</Text>
-              <View style={s.inputRow}>
-                <TextInput
-                  style={s.input}
-                  placeholder="Ej: Produccion, Ventas..."
-                  placeholderTextColor={colors.mutedForeground}
-                  value={nuevaArea}
-                  onChangeText={setNuevaArea}
-                  onSubmitEditing={handleAddArea}
-                />
-                <Pressable style={s.saveBtn} onPress={handleAddArea}>
-                  <Check size={18} color="#fff" />
-                </Pressable>
-              </View>
-            </View>
-
-            <Text style={s.sectionLabel}>Areas registradas</Text>
+            {/* Ocultar creación manual en "producción" para evitar confusión, 
+                pero dejar la lista de lo que viene de Odoo */}
+            <Text style={s.sectionLabel}>Areas de Odoo</Text>
             <View style={s.listSection}>
               <View style={s.listHeader}>
-                <Text style={s.listHeaderText}>Lista de areas</Text>
+                <Text style={s.listHeaderText}>Departamentos Sincronizados</Text>
                 <Text style={s.badge}>{areas.length}</Text>
               </View>
               {areasConConteo.length === 0 ? (
                 <View style={s.emptyBox}>
                   <Grid size={24} color={colors.border} />
-                  <Text style={s.emptyText}>Aun no hay areas registradas</Text>
+                  <Text style={s.emptyText}>No hay áreas sincronizadas aún</Text>
                 </View>
               ) : (
                 areasConConteo.map((area) => (
@@ -399,59 +384,16 @@ export default function EmpleadosScreen() {
           </>
         ) : (
           <>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginRight: 16 }}>
-              <Text style={s.sectionLabel}>{editingEmpId ? "Editar empleado" : "Nuevo empleado"}</Text>
-              {editingEmpId && (
-                <Pressable onPress={cancelEdit} style={{ marginTop: 8 }}>
-                  <Text style={{ fontSize: 11, color: colors.destructive, fontWeight: '700' }}>CANCELAR EDICION</Text>
-                </Pressable>
-              )}
-            </View>
-            <View style={s.card}>
-              <Text style={s.fieldLabel}>Nombre completo</Text>
-              <TextInput
-                style={[s.input, { marginBottom: 12 }]}
-                placeholder="Nombre del empleado"
-                placeholderTextColor={colors.mutedForeground}
-                value={nuevoEmp}
-                onChangeText={setNuevoEmp}
-              />
-              <Text style={s.fieldLabel}>Seleccionar area</Text>
-              {areas.length === 0 ? (
-                <Text style={s.noAreaText}>
-                  Primero registra un area en la pestana "Areas"
-                </Text>
-              ) : (
-                <View style={s.areaChips}>
-                  {areas.map((area) => (
-                    <Pressable
-                      key={area.id}
-                      style={[s.chip, areaSelId === area.id && s.chipSel]}
-                      onPress={() => setAreaSelId(area.id)}
-                    >
-                      <Text style={[s.chipText, areaSelId === area.id && s.chipTextSel]}>
-                        {area.nombre}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
-              )}
-              <Pressable style={[s.addEmpBtn, editingEmpId ? { backgroundColor: colors.secondary } : null]} onPress={handleAddEmpleado}>
-                {editingEmpId ? <Check size={16} color="#fff" /> : <UserPlus size={16} color="#fff" />}
-                <Text style={s.addEmpBtnText}>{editingEmpId ? "Guardar Cambios" : "Registrar Empleado"}</Text>
-              </Pressable>
-            </View>
-
-            <Text style={s.sectionLabel}>Empleados registrados</Text>
+            <Text style={s.sectionLabel}>Empleados de Odoo</Text>
             <View style={s.listSection}>
               <View style={s.listHeader}>
-                <Text style={s.listHeaderText}>Lista de empleados</Text>
+                <Text style={s.listHeaderText}>Personal Sincronizado</Text>
                 <Text style={s.badge}>{empleados.length}</Text>
               </View>
               {empleados.length === 0 ? (
                 <View style={s.emptyBox}>
                   <Users size={24} color={colors.border} />
-                  <Text style={s.emptyText}>Aun no hay empleados</Text>
+                  <Text style={s.emptyText}>No hay empleados sincronizados</Text>
                 </View>
               ) : (
                 empleados.map((emp) => {
@@ -463,16 +405,13 @@ export default function EmpleadosScreen() {
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text style={s.listItemName}>{emp.nombre}</Text>
-                        <Text style={s.listItemSub}>{area?.nombre ?? "Sin area"}</Text>
+                        <Text style={s.listItemSub}>{area?.nombre ?? "Sin departamento"}</Text>
                       </View>
-                      <View style={{ flexDirection: 'row', gap: 10 }}>
-                        <Pressable onPress={() => handleEdit(emp)}>
-                          <Edit2 size={16} color={colors.mutedForeground} />
-                        </Pressable>
-                        <Pressable onPress={() => handleDelete(emp.id)}>
-                          <Trash2 size={16} color={colors.destructive} />
-                        </Pressable>
-                      </View>
+                      {emp.odooId && (
+                        <View style={{ backgroundColor: '#ECFDF5', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                          <Text style={{ fontSize: 9, color: '#059669', fontWeight: '700' }}>ODOO</Text>
+                        </View>
+                      )}
                     </View>
                   );
                 })

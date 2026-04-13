@@ -6,15 +6,15 @@ import {
   useEffect,
   useState,
 } from "react";
-import { OdooConfig, OdooService } from "../utils/odoo";
+import { OdooConfig, OdooService, AttendancePayload } from "../utils/odoo";
 
 // --- CONFIGURACIÓN DE ODOO ---
-// El usuario debe completar estos datos
+// Se recomienda usar variables de entorno (VITE_ODOO_*) para mayor seguridad en producción
 const ODOO_CONFIG: OdooConfig = {
-  url: "https://tu-odoo.odoo.com",
-  db: "tu_base_de_datos",
-  username: "tu_usuario@email.com",
-  apiKey: "tu_api_key_o_password",
+  url: (import.meta as any).env.VITE_ODOO_URL || "https://tu-odoo.odoo.com",
+  db: (import.meta as any).env.VITE_ODOO_DB || "tu_base_de_datos",
+  username: (import.meta as any).env.VITE_ODOO_USERNAME || "tu_usuario@email.com",
+  apiKey: (import.meta as any).env.VITE_ODOO_API_KEY || "tu_api_key_o_password",
 };
 
 export interface Area {
@@ -26,7 +26,8 @@ export interface Empleado {
   id: string;
   nombre: string;
   areaId: string;
-  odooId?: number; // ID único de Odoo
+  display_name?: string;
+  odooId?: number;
 }
 
 export interface RegistroAsistencia {
@@ -99,7 +100,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const refreshOdooEmployees = async () => {
     if (ODOO_CONFIG.url.includes("tu-odoo")) {
-      setOdooError("Configura las credenciales de Odoo en AppContext.tsx");
+      setOdooError("Configura las credenciales de Odoo (VITE_ODOO_*)");
       return;
     }
 
@@ -108,7 +109,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       const odooEmployees = await odoo.getEmployees();
       
-      // Mapear departamentos a áreas
       const newAreas = [...areas];
       const newEmpleados: Empleado[] = odooEmployees.map(oe => {
         const areaName = oe.department_id ? oe.department_id[1] : "GENERAL";
@@ -120,7 +120,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
         return {
           id: `odoo_${oe.id}`,
-          nombre: oe.name,
+          nombre: oe.display_name || oe.name,
+          display_name: oe.display_name,
           areaId: area.id,
           odooId: oe.id
         };
@@ -150,45 +151,56 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const genId = () =>
     Date.now().toString() + Math.random().toString(36).substr(2, 9);
 
-  const addArea = useCallback(
-    (nombre: string) => {
-      const nueva: Area = { id: genId(), nombre: nombre.trim() };
-      const updated = [...areas, nueva];
-      setAreas(updated);
-      saveAreas(updated);
-    },
-    [areas]
-  );
+  // Helper para metadata de producción
+  const getProductionMetadata = async () => {
+    const meta: Partial<AttendancePayload> = {
+      in_browser: navigator.userAgent.substring(0, 60),
+      in_mode: 'browser',
+    };
 
-  const addEmpleado = useCallback(
-    (nombre: string, areaId: string) => {
-      const nuevo: Empleado = { id: genId(), nombre: nombre.trim(), areaId };
-      const updated = [...empleados, nuevo];
-      setEmpleados(updated);
-      saveEmpleados(updated);
-    },
-    [empleados]
-  );
+    try {
+      const ipRes = await fetch('https://api.ipify.org?format=json').then(r => r.json());
+      meta.in_ip_address = ipRes.ip;
+    } catch {}
 
-  const updateEmpleado = useCallback(
-    (id: string, nombre: string, areaId: string) => {
-      const updated = empleados.map((e) =>
-        e.id === id ? { ...e, nombre: nombre.trim(), areaId } : e
+    try {
+      const pos = await new Promise<GeolocationPosition>((res, rej) => 
+        navigator.geolocation.getCurrentPosition(res, rej, { timeout: 5000 })
       );
-      setEmpleados(updated);
-      saveEmpleados(updated);
-    },
-    [empleados]
-  );
+      meta.in_latitude = pos.coords.latitude;
+      meta.in_longitude = pos.coords.longitude;
+    } catch {}
 
-  const deleteEmpleado = useCallback(
-    (id: string) => {
-      const updated = empleados.filter((e) => e.id !== id);
-      setEmpleados(updated);
-      saveEmpleados(updated);
-    },
-    [empleados]
-  );
+    return meta;
+  };
+
+  const addArea = useCallback((nombre: string) => {
+    const nueva: Area = { id: genId(), nombre: nombre.trim() };
+    const updated = [...areas, nueva];
+    setAreas(updated);
+    saveAreas(updated);
+  }, [areas]);
+
+  const addEmpleado = useCallback((nombre: string, areaId: string) => {
+    const nuevo: Empleado = { id: genId(), nombre: nombre.trim(), areaId };
+    const updated = [...empleados, nuevo];
+    setEmpleados(updated);
+    saveEmpleados(updated);
+  }, [empleados]);
+
+  const updateEmpleado = useCallback((id: string, nombre: string, areaId: string) => {
+    const updated = empleados.map((e) =>
+      e.id === id ? { ...e, nombre: nombre.trim(), areaId } : e
+    );
+    setEmpleados(updated);
+    saveEmpleados(updated);
+  }, [empleados]);
+
+  const deleteEmpleado = useCallback((id: string) => {
+    const updated = empleados.filter((e) => e.id !== id);
+    setEmpleados(updated);
+    saveEmpleados(updated);
+  }, [empleados]);
 
   const addRegistro = useCallback(
     async (registro: RegistroAsistencia) => {
@@ -197,11 +209,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const emp = empleados.find(e => e.id === registro.empleadoId);
       if (emp?.odooId) {
         try {
-          // Convertir "YYYY-MM-DD HH:MM" a "YYYY-MM-DD HH:MM:00" para Odoo
           const checkIn = registro.entrada.length === 16 ? `${registro.entrada}:00` : registro.entrada;
           const checkOut = registro.salida.length === 16 ? `${registro.salida}:00` : registro.salida;
           
-          await odoo.registerAttendance(emp.odooId, checkIn, checkOut);
+          const meta = await getProductionMetadata();
+          
+          await odoo.registerAttendance({
+            employee_id: emp.odooId,
+            check_in: checkIn,
+            check_out: checkOut,
+            ...meta
+          });
           updatedRegistro.odooSync = true;
         } catch (e) {
           console.error("Error sincronizando con Odoo", e);

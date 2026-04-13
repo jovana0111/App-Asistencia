@@ -9,7 +9,24 @@ export interface OdooConfig {
 export interface OdooEmployee {
   id: number;
   name: string;
+  display_name: string;
   department_id: [number, string] | false;
+}
+
+export interface AttendancePayload {
+  employee_id: number;
+  check_in: string;
+  check_out: string;
+  in_browser?: string;
+  in_ip_address?: string;
+  in_latitude?: number;
+  in_longitude?: number;
+  in_mode?: 'manual' | 'kiosk' | 'systray' | 'browser';
+  out_browser?: string;
+  out_ip_address?: string;
+  out_latitude?: number;
+  out_longitude?: number;
+  out_mode?: 'manual' | 'kiosk' | 'systray' | 'browser';
 }
 
 export class OdooService {
@@ -20,8 +37,6 @@ export class OdooService {
   }
 
   private async call(model: string, method: string, args: any[], kwargs: any = {}) {
-    // Note: In a real production app, you might want to use a proxy to avoid exposing API keys
-    // and to handle CORS. For now, we use direct fetch.
     const response = await fetch(`${this.config.url}/jsonrpc`, {
       method: 'POST',
       headers: {
@@ -35,7 +50,7 @@ export class OdooService {
           method: 'execute_kw',
           args: [
             this.config.db,
-            this.config.username, // This might need to be uid, but some setups allow login
+            this.config.username,
             this.config.apiKey,
             model,
             method,
@@ -55,7 +70,6 @@ export class OdooService {
   }
 
   async authenticate() {
-    // Verify credentials by searching for current user or just a ping
     try {
       const response = await fetch(`${this.config.url}/jsonrpc`, {
         method: 'POST',
@@ -72,7 +86,7 @@ export class OdooService {
         })
       });
       const result = await response.json();
-      return result.result; // returns uid or false
+      return result.result;
     } catch (e) {
       console.error("Auth error", e);
       return false;
@@ -86,22 +100,14 @@ export class OdooService {
     return this.call('hr.employee', 'search_read', [
       [['active', '=', true]]
     ], {
-      fields: ['id', 'name', 'department_id']
+      fields: ['id', 'name', 'display_name', 'department_id']
     });
   }
 
-  async registerAttendance(employeeId: number, checkIn: string, checkOut: string) {
+  async registerAttendance(payload: AttendancePayload) {
     const uid = await this.authenticate();
     if (!uid) throw new Error("No se pudo autenticar con Odoo");
 
-    // Odoo expects UTC datetimes in YYYY-MM-DD HH:MM:SS format
-    // Assuming checkIn and checkOut are already in local format YYYY-MM-DD HH:MM
-    // We might need to adjust them to UTC if Odoo is configured for UTC (default)
-    
-    return this.call('hr.attendance', 'create', [{
-      employee_id: employeeId,
-      check_in: checkIn,
-      check_out: checkOut,
-    }]);
+    return this.call('hr.attendance', 'create', [payload]);
   }
 }
