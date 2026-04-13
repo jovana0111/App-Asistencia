@@ -1,3 +1,4 @@
+
 import {
   createContext,
   useCallback,
@@ -5,116 +6,16 @@ import {
   useEffect,
   useState,
 } from "react";
+import { OdooConfig, OdooService } from "../utils/odoo";
 
-const EMPLEADOS_DEFAULT = [
-  "ADAME GUTIERREZ ALMA GABRIELA",
-  "AGUILAR CARREON ANA GENOVEVA",
-  "AGUILAR CARREON ISIDRA",
-  "ALEJANDRO FALCON",
-  "ANA LILIA VELAZQUEZ GOMEZ",
-  "ANDRADE MORA HUGO CESAR",
-  "APARICIO VELAZQUEZ ANGEL ADOLFO",
-  "ARISTEO SILVA TORRES",
-  "BAUTISTA",
-  "BRIONES ROBLES MIGUEL ANGEL",
-  "CALZADA ORTIZ NANCY EDITH",
-  "CAMPOS VARGAS JULIO",
-  "CANALES MENA EDUARDO YONATHAN",
-  "CAPUCHINO DELGADO JUAN DE LA CRUZ",
-  "CARRERAS BAEZ CELENA",
-  "CASTORENA CONTRERAS SERGIO EMMANUEL",
-  "CASTORENA CONTRERAS VICTOR ALFONSO",
-  "CELENA",
-  "CHAVARRIA MACIAS ROBERTO DANIEL",
-  "CHRISTOPHER BERNAL",
-  "CRUZ GARCIA MIGUEL ANGEL",
-  "CRUZ TRUJILLO JESUS ALEJANDRO",
-  "CUELLAR MACIAS CESAR",
-  "DAVDI",
-  "DE LA CRUZ VILLA MARIA GUADALUPE",
-  "DE SANTIAGO GARCIA JOSE ALFREDO",
-  "DELGADO ARANDA JUAN ANDRES",
-  "DELGADO RODRIGUEZ LUIS JULIAN",
-  "DUEÑAS HUERTA JUAN CARLOS",
-  "DUEÑAS MONTOYA JUAN DIEGO",
-  "DUEÑAS VALADEZ MICHELLE SARAHI",
-  "DURON JUAN ORLANDO",
-  "EDUARDO",
-  "ERIK RAUL ALBA BRIONES",
-  "ESPARZA DE LOERA ANA ROSA",
-  "ESPARZA RODRIGUEZ ULISES IVAN",
-  "ESQUIVEL AVILA SERGIO ALEJANDRO",
-  "GARCIA ESQUIVEL MIGUEL",
-  "GARCIA JOSE REFUGIO",
-  "GARCIA MARES JOSE DE JESUS",
-  "GARCIA RAMOS MARCO ANTONIO",
-  "GONZALEZ BRANDO FILIBERTO",
-  "GONZALEZ ELIZALDE MARIELA",
-  "GUILLEN MANRRIQUEZ RAUL URIEL",
-  "GUSTAVO",
-  "GUTIERREZ HERNANDEZ DIANA LIZETH",
-  "GUTIERREZ HERNANDEZ MIREYA",
-  "HERNANDEZ JIMENEZ PEDRO",
-  "HERNANDEZ TORRES VIRIDIANA",
-  "HERRADA ALBA JONATHAN GEOVANNI",
-  "HERRERA CORDOVA ANA ROSA",
-  "HERRERA MORENO JUANA NIEVES",
-  "HERRERA RUVALCABA AYDE GUADALUPE",
-  "IBARRA RUVALCABA DAVID EDUARDO",
-  "JOVANA",
-  "JUANA",
-  "JUAREZ CHABLE ROSA ANGELICA",
-  "JUAREZ CHABLE SERGIO CECILIO",
-  "LARA DE LUNA GONZALO",
-  "LAZARIN RODRIGUEZ BRAULIO",
-  "LOPEZ MOYA JUANA MARIA",
-  "LOYOLA GARCIA ALAN RAMON",
-  "LUCIANA",
-  "MACIAS BRENDA NALLELY",
-  "MANUEL BUENROSTRO",
-  "MARCIAL LUEVANO HARON ORACIO",
-  "MARTINEZ RODRIGUEZ JAIME",
-  "MARTINEZ RODRIGUEZ TERESA DE JESUS",
-  "MELENDEZ CAPUCHINO VICTOR MANUEL",
-  "MORENO DE LA ROSA SAMUEL IVAN",
-  "MUÑOZ GUERRERO BRAYAN EDUARDO",
-  "MUÑOZ HERNANDEZ MARIA DEL CARMEN",
-  "NOEL NUÑEZ JORGE FABIAN",
-  "NORMA DE LOERA",
-  "NUÑEZ SALINAS WALTER GUSTAVO",
-  "OMAR ALFREDO ARELLANO",
-  "ORTIZ GUZMAN DANIEL ISRAEL",
-  "PEREZ ROCHA DIANA JACQUELINE",
-  "PIÑA CHAVEZ KAREN LIZETH",
-  "RAMIREZ CRUZ JUAN JESUS",
-  "RAMIREZ GONZALEZ MARCO ANTONIO",
-  "RAMIREZ HERNANDEZ FERNANDA ZOE",
-  "RAMIREZ MARTINEZ JESSICA JOANNA",
-  "RANGEL AREVALO RAUL OSBALDO",
-  "REYES OVALLE DANIEL",
-  "REYES TAVARES LINDA ISAURA",
-  "RIVERA FRANCISCO JAVIER",
-  "RIVERA RAMOS DAYANA SOFIA",
-  "RIVERA RAMOS JHOAN DE JESUS",
-  "RODRIGUEZ DONDIEGO ALVARO MATEO",
-  "RODRIGUEZ FRANCO EZEQUIEL DE JESUS",
-  "ROMERO SAUL FIDEL",
-  "SAMUEL ACEVES",
-  "SANCHEZ CAMILO JONATHA DANIEL",
-  "SANTANA ZAMARRIPA ARIANA",
-  "SAUCEDO LOMELI EDUARDO",
-  "TAVARES GUTIERREZ HECTOR MANUEL",
-  "TORRES DE LA CRUZ ADAN",
-  "VAZQUEZ LOPEZ OSCAR HUMBERTO",
-  "VELAZQUEZ CAPUCHINO JOSE ARMANDO",
-  "VELAZQUEZ GONZALES TERESA",
-  "VENEGAS LUIS ENRIQUE",
-  "VICTOR",
-  "ZACARIAS RAMOS GLORIA",
-  "ZAPATA ESCOBAR JOSE EMILIANO",
-  "ZARATE TORRES ANGEL ANDRES",
-  "ZAVALA SALAS JOSE ALFREDO",
-];
+// --- CONFIGURACIÓN DE ODOO ---
+// El usuario debe completar estos datos
+const ODOO_CONFIG: OdooConfig = {
+  url: "https://tu-odoo.odoo.com",
+  db: "tu_base_de_datos",
+  username: "tu_usuario@email.com",
+  apiKey: "tu_api_key_o_password",
+};
 
 export interface Area {
   id: string;
@@ -125,6 +26,7 @@ export interface Empleado {
   id: string;
   nombre: string;
   areaId: string;
+  odooId?: number; // ID único de Odoo
 }
 
 export interface RegistroAsistencia {
@@ -136,21 +38,25 @@ export interface RegistroAsistencia {
   fecha: string;
   entrada: string;
   salida: string;
+  odooSync?: boolean;
 }
 
 interface AppContextType {
   areas: Area[];
   empleados: Empleado[];
   registros: RegistroAsistencia[];
+  loading: boolean;
+  odooError: string | null;
   addArea: (nombre: string) => void;
   addEmpleado: (nombre: string, areaId: string) => void;
   updateEmpleado: (id: string, nombre: string, areaId: string) => void;
   deleteEmpleado: (id: string) => void;
-  addRegistro: (registro: RegistroAsistencia) => void;
+  addRegistro: (registro: RegistroAsistencia) => Promise<void>;
   deleteRegistro: (id: string) => void;
   clearRegistros: () => void;
   getAreaByEmpleado: (empleadoId: string) => Area | undefined;
   importEmpleados: (data: { nombre: string; area: string }[]) => void;
+  refreshOdooEmployees: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -161,13 +67,18 @@ const STORAGE_KEYS = {
   REGISTROS: "asistencia_registros",
 };
 
+const odoo = new OdooService(ODOO_CONFIG);
+
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [areas, setAreas] = useState<Area[]>([]);
   const [empleados, setEmpleados] = useState<Empleado[]>([]);
   const [registros, setRegistros] = useState<RegistroAsistencia[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [odooError, setOdooError] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
+    refreshOdooEmployees();
   }, []);
 
   const loadData = () => {
@@ -180,42 +91,50 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       let loadedEmpleados: Empleado[] = empleadosStr ? JSON.parse(empleadosStr) : [];
       let loadedRegistros: RegistroAsistencia[] = registrosStr ? JSON.parse(registrosStr) : [];
 
-      // Cargar empleados por defecto si no se han cargado antes
-      const defaultsLoaded = localStorage.getItem("asistencia_defaults_loaded");
-      if (!defaultsLoaded) {
-        let generalArea = loadedAreas.find(
-          (a) => a.nombre.toUpperCase() === "GENERAL"
-        );
-        if (!generalArea) {
-          generalArea = { id: genId(), nombre: "GENERAL" };
-          loadedAreas.push(generalArea);
-        }
-
-        EMPLEADOS_DEFAULT.forEach((nombre) => {
-          const exists = loadedEmpleados.some(
-            (e) => e.nombre.toLowerCase() === nombre.toLowerCase()
-          );
-          if (!exists) {
-            loadedEmpleados.push({
-              id: genId() + Math.random().toString(36).substr(2, 5),
-              nombre: nombre.trim(),
-              areaId: generalArea!.id,
-            });
-          }
-        });
-
-        localStorage.setItem("asistencia_defaults_loaded", "true");
-        localStorage.setItem(STORAGE_KEYS.AREAS, JSON.stringify(loadedAreas));
-        localStorage.setItem(
-          STORAGE_KEYS.EMPLEADOS,
-          JSON.stringify(loadedEmpleados)
-        );
-      }
-
       setAreas(loadedAreas);
       setEmpleados(loadedEmpleados);
       setRegistros(loadedRegistros);
     } catch {}
+  };
+
+  const refreshOdooEmployees = async () => {
+    if (ODOO_CONFIG.url.includes("tu-odoo")) {
+      setOdooError("Configura las credenciales de Odoo en AppContext.tsx");
+      return;
+    }
+
+    setLoading(true);
+    setOdooError(null);
+    try {
+      const odooEmployees = await odoo.getEmployees();
+      
+      // Mapear departamentos a áreas
+      const newAreas = [...areas];
+      const newEmpleados: Empleado[] = odooEmployees.map(oe => {
+        const areaName = oe.department_id ? oe.department_id[1] : "GENERAL";
+        let area = newAreas.find(a => a.nombre === areaName);
+        if (!area) {
+          area = { id: Date.now().toString() + Math.random(), nombre: areaName };
+          newAreas.push(area);
+        }
+
+        return {
+          id: `odoo_${oe.id}`,
+          nombre: oe.name,
+          areaId: area.id,
+          odooId: oe.id
+        };
+      });
+
+      setAreas(newAreas);
+      setEmpleados(newEmpleados);
+      saveAreas(newAreas);
+      saveEmpleados(newEmpleados);
+    } catch (e: any) {
+      setOdooError(e.message || "Error al conectar con Odoo");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const saveAreas = (data: Area[]) => {
@@ -272,12 +191,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   );
 
   const addRegistro = useCallback(
-    (registro: RegistroAsistencia) => {
-      const updated = [registro, ...registros];
+    async (registro: RegistroAsistencia) => {
+      let updatedRegistro = { ...registro };
+      
+      const emp = empleados.find(e => e.id === registro.empleadoId);
+      if (emp?.odooId) {
+        try {
+          // Convertir "YYYY-MM-DD HH:MM" a "YYYY-MM-DD HH:MM:00" para Odoo
+          const checkIn = registro.entrada.length === 16 ? `${registro.entrada}:00` : registro.entrada;
+          const checkOut = registro.salida.length === 16 ? `${registro.salida}:00` : registro.salida;
+          
+          await odoo.registerAttendance(emp.odooId, checkIn, checkOut);
+          updatedRegistro.odooSync = true;
+        } catch (e) {
+          console.error("Error sincronizando con Odoo", e);
+          updatedRegistro.odooSync = false;
+        }
+      }
+
+      const updated = [updatedRegistro, ...registros];
       setRegistros(updated);
       saveRegistros(updated);
     },
-    [registros]
+    [registros, empleados]
   );
 
   const deleteRegistro = useCallback(
@@ -344,6 +280,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         areas,
         empleados,
         registros,
+        loading,
+        odooError,
         addArea,
         addEmpleado,
         updateEmpleado,
@@ -353,6 +291,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         clearRegistros,
         getAreaByEmpleado,
         importEmpleados,
+        refreshOdooEmployees,
       }}
     >
       {children}

@@ -1,4 +1,4 @@
-import { Check, Edit2, Grid, Trash2, User, UserPlus, Users } from "lucide-react";
+import { Check, Edit2, Grid, Trash2, User, UserPlus, Users, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import {
   Alert,
@@ -17,7 +17,19 @@ import { useColors } from "../hooks/useColors";
 
 export default function EmpleadosScreen() {
   const colors = useColors();
-  const { areas, empleados, addArea, addEmpleado, updateEmpleado, deleteEmpleado } = useApp();
+
+  const { 
+    areas, 
+    empleados, 
+    addArea, 
+    addEmpleado, 
+    updateEmpleado, 
+    deleteEmpleado, 
+    refreshOdooEmployees,
+    loading,
+    odooError 
+  } = useApp();
+
 
   const [nuevaArea, setNuevaArea] = useState("");
   const [nuevoEmp, setNuevoEmp] = useState("");
@@ -286,14 +298,36 @@ export default function EmpleadosScreen() {
 
   return (
     <View style={s.container}>
+
       <View style={s.header}>
         <Image
           source={logo as any}
           style={s.logo}
           resizeMode="contain"
         />
-        <Text style={s.headerTitle}>Gestion de Personal</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={s.headerTitle}>Gestion de Personal</Text>
+        </View>
+        <Pressable 
+          style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, padding: 8 }]} 
+          onPress={refreshOdooEmployees}
+          disabled={loading}
+        >
+          <RefreshCw size={20} color={colors.headerFg} style={loading ? { opacity: 0.5 } : {}} />
+        </Pressable>
       </View>
+
+      {odooError && (
+        <View style={{ backgroundColor: '#FEE2E2', padding: 10, borderBottomWidth: 1, borderBottomColor: '#EF4444' }}>
+          <Text style={{ fontSize: 12, color: '#B91C1C', textAlign: 'center' }}>{odooError}</Text>
+        </View>
+      )}
+
+      {loading && (
+        <View style={{ backgroundColor: '#DBEAFE', padding: 10, borderBottomWidth: 1, borderBottomColor: '#3B82F6' }}>
+          <Text style={{ fontSize: 12, color: '#1E40AF', textAlign: 'center' }}>Sincronizando con Odoo...</Text>
+        </View>
+      )}
 
       <View style={s.tabRow}>
         <Pressable

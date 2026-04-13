@@ -1,4 +1,4 @@
-import { Trash2, Trash, Clipboard, Download, Clock } from "lucide-react";
+import { Trash2, Trash, Clipboard, Download, Clock, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 import {
   Alert,
@@ -266,9 +266,14 @@ export default function ListaScreen() {
             <Text style={s.areaTagText}>{item.areaNombre}</Text>
           </View>
         ) : null}
-        <Text style={s.nombre} numberOfLines={1}>
-          {item.empleadoNombre}
-        </Text>
+
+
+        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <Text style={s.nombre} numberOfLines={1}>
+            {item.empleadoNombre}
+          </Text>
+          {item.odooSync && <CheckCircle2 size={12} color="#10B981" />}
+        </View>
         <Pressable
           style={s.deleteBtn}
           onPress={() => handleDelete(item.id, item.empleadoNombre)}

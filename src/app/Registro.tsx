@@ -19,7 +19,7 @@ import logo from "../../assets/images/logo.png";
 
 export default function RegistroScreen() {
   const colors = useColors();
-  const { areas, empleados, addRegistro } = useApp();
+  const { areas, empleados, addRegistro, loading, odooError } = useApp();
 
   const [busqueda, setBusqueda] = useState("");
   const [sugerencias, setSugerencias] = useState<Empleado[]>([]);
@@ -68,7 +68,8 @@ export default function RegistroScreen() {
     return area?.nombre ?? "";
   };
 
-  const handleAgregarLista = useCallback(() => {
+
+  const handleAgregarLista = useCallback(async () => {
     if (!empleadoSel) {
       Alert.alert("Error", "Selecciona un empleado");
       return;
@@ -87,11 +88,16 @@ export default function RegistroScreen() {
       entrada,
       salida,
     };
-    addRegistro(registro);
-    Alert.alert("Agregado", `${empleadoSel.nombre} en lista`);
-    setBusqueda("");
-    setEmpleadoSel(null);
-    actualizarHorasTurno(turnoIdx);
+    
+    try {
+      await addRegistro(registro);
+      Alert.alert("Agregado", `${empleadoSel.nombre} registrado con éxito`);
+      setBusqueda("");
+      setEmpleadoSel(null);
+      actualizarHorasTurno(turnoIdx);
+    } catch (e: any) {
+      Alert.alert("Error", e.message || "No se pudo registrar la asistencia");
+    }
   }, [empleadoSel, entrada, salida, turnoIdx, areas, addRegistro]);
 
   const s = StyleSheet.create({
@@ -264,10 +270,27 @@ export default function RegistroScreen() {
         </View>
       </View>
 
-      {empleados.length === 0 && (
+
+      {odooError && (
+        <View style={[s.emptyBanner, { backgroundColor: '#FEE2E2', borderLeftColor: '#EF4444' }]}>
+          <Text style={[s.emptyBannerText, { color: '#B91C1C' }]}>
+            Error Odoo: {odooError}
+          </Text>
+        </View>
+      )}
+
+      {loading && (
+        <View style={[s.emptyBanner, { backgroundColor: '#DBEAFE', borderLeftColor: '#3B82F6' }]}>
+          <Text style={[s.emptyBannerText, { color: '#1E40AF' }]}>
+            Sincronizando empleados de Odoo...
+          </Text>
+        </View>
+      )}
+
+      {empleados.length === 0 && !loading && !odooError && (
         <View style={s.emptyBanner}>
           <Text style={s.emptyBannerText}>
-            Sin empleados. Ve a "Empleados" para agregar.
+            Sin empleados. Verifica la conexión con Odoo.
           </Text>
         </View>
       )}
