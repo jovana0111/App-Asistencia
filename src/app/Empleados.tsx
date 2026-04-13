@@ -1,12 +1,10 @@
-import { Check, Edit2, Grid, Trash2, User, UserPlus, Users, RefreshCw } from "lucide-react";
+import { Grid, User, Users, RefreshCw } from "lucide-react";
 import { useState } from "react";
-import {
   Alert,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
   Image,
 } from "react-native";
@@ -30,65 +28,7 @@ export default function EmpleadosScreen() {
     odooError 
   } = useApp();
 
-
-  const [nuevaArea, setNuevaArea] = useState("");
-  const [nuevoEmp, setNuevoEmp] = useState("");
-  const [areaSelId, setAreaSelId] = useState<string>("");
   const [tab, setTab] = useState<"areas" | "empleados">("areas");
-  const [editingEmpId, setEditingEmpId] = useState<string | null>(null);
-
-  const handleAddArea = () => {
-    if (!nuevaArea.trim()) {
-      Alert.alert("Error", "Ingresa el nombre del area");
-      return;
-    }
-    addArea(nuevaArea);
-    setNuevaArea("");
-  };
-
-  const handleAddEmpleado = () => {
-    if (!nuevoEmp.trim()) {
-      Alert.alert("Error", "Ingresa el nombre del empleado");
-      return;
-    }
-    if (!areaSelId) {
-      Alert.alert("Error", "Selecciona un area");
-      return;
-    }
-    
-    if (editingEmpId) {
-      updateEmpleado(editingEmpId, nuevoEmp, areaSelId);
-      setEditingEmpId(null);
-    } else {
-      addEmpleado(nuevoEmp, areaSelId);
-    }
-    
-    setNuevoEmp("");
-  };
-
-  const handleEdit = (emp: Empleado) => {
-    setEditingEmpId(emp.id);
-    setNuevoEmp(emp.nombre);
-    setAreaSelId(emp.areaId);
-    setTab("empleados");
-  };
-
-  const handleDelete = (id: string) => {
-    Alert.alert(
-      "Eliminar Empleado",
-      "¿Estas seguro de eliminar este empleado?",
-      [
-        { text: "Cancelar", style: "cancel" },
-        { text: "Eliminar", style: "destructive", onPress: () => deleteEmpleado(id) }
-      ]
-    );
-  };
-
-  const cancelEdit = () => {
-    setEditingEmpId(null);
-    setNuevoEmp("");
-    setAreaSelId("");
-  };
 
   const s = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },

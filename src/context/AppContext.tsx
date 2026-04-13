@@ -7,7 +7,7 @@ import {
   useState,
 } from "react";
 
-import { OdooConfig, OdooService, AttendancePayload } from "../utils/odoo";
+import { OdooConfig, OdooService } from "../utils/odoo";
 
 // --- CONFIGURACIÓN DE ODOO ---
 const ODOO_CONFIG: OdooConfig = {
