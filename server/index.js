@@ -12,7 +12,7 @@ app.use(express.json());
 const ODOO_CONFIG = {
     host: 'srv.seishin.com.mx',
     port: 443,
-    db: 'testcont1',
+    db: 'contab_test',
     username: 'admin',
     apiKey: '1234'
 };
@@ -27,7 +27,7 @@ console.log(`Configurado para: ${ODOO_CONFIG.host} | DB: ${ODOO_CONFIG.db}`);
 // Traer Empleados
 app.get('/api/empleados', (req, res) => {
     console.log('[GET] /api/empleados - Autenticando...');
-    
+
     common.methodCall('authenticate', [ODOO_CONFIG.db, ODOO_CONFIG.username, ODOO_CONFIG.apiKey, {}], (err, uid) => {
         if (err) {
             console.error('Error de red Odoo:', err);
@@ -39,7 +39,7 @@ app.get('/api/empleados', (req, res) => {
         }
 
         console.log(`Autenticado. UID: ${uid}. Consultando empleados...`);
-        
+
         models.methodCall('execute_kw', [
             ODOO_CONFIG.db,
             uid,
@@ -91,7 +91,7 @@ app.post('/api/asistencia', (req, res) => {
 // Servir App en Producción
 const DIST_PATH = path.join(__dirname, '../dist');
 app.use(express.static(DIST_PATH));
-app.get('*', (req, res) => {
+app.get('(.*)', (req, res) => {
     if (!req.path.startsWith('/api')) {
         res.sendFile(path.join(DIST_PATH, 'index.html'));
     }
