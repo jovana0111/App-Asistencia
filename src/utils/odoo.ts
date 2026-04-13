@@ -86,10 +86,19 @@ export class OdooService {
         })
       });
       const result = await response.json();
+      
+      if (result.error) {
+        throw new Error(`Error de Odoo: ${result.error.data?.message || result.error.message}`);
+      }
+      
+      if (result.result === false) {
+        throw new Error("Credenciales de Odoo incorrectas (Usuario, Base de datos o API Key)");
+      }
+      
       return result.result;
-    } catch (e) {
+    } catch (e: any) {
       console.error("Auth error", e);
-      return false;
+      throw e;
     }
   }
 

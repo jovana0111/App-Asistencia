@@ -21,7 +21,7 @@ export default defineConfig({
     },
     proxy: {
       '/odoo-api': {
-        target: 'http://localhost:8069', // Cambia esto por tu URL de Odoo
+        target: 'https://srv.seishin.com.mx/',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/odoo-api/, ''),
       },
