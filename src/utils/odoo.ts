@@ -31,13 +31,14 @@ export interface AttendancePayload {
 
 export class OdooService {
   private config: OdooConfig;
+  private uid: number | null = null;
 
   constructor(config: OdooConfig) {
     this.config = config;
   }
 
-  private async call(model: string, method: string, args: any[], kwargs: any = {}) {
-    const response = await fetch(`${this.config.url}/jsonrpc`, {
+  private async callRaw(path: string, params: any) {
+    const response = await fetch(`${this.config.url}${path}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -45,78 +46,83 @@ export class OdooService {
       body: JSON.stringify({
         jsonrpc: '2.0',
         method: 'call',
-        params: {
-          service: 'object',
-          method: 'execute_kw',
-          args: [
-            this.config.db,
-            this.config.username,
-            this.config.apiKey,
-            model,
-            method,
-            args,
-            kwargs
-          ],
-        },
+        params: params,
         id: Math.floor(Math.random() * 1000000),
       }),
     });
 
     const result = await response.json();
     if (result.error) {
-      throw new Error(result.error.data?.message || result.error.message);
+      throw new Error(`Odoo Error: ${result.error.data?.message || result.error.message}`);
     }
     return result.result;
   }
 
   async authenticate() {
     try {
-      const response = await fetch(`${this.config.url}/jsonrpc`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          method: 'call',
-          params: {
-            service: 'common',
-            method: 'authenticate',
-            args: [this.config.db, this.config.username, this.config.apiKey, {}]
-          },
-          id: 1
-        })
+      // Usamos el endpoint de sesión que es más común en instalaciones modernas
+      const result = await this.callRaw('/web/session/authenticate', {
+        db: this.config.db,
+        login: this.config.username,
+        password: this.config.apiKey,
       });
-      const result = await response.json();
-      
-      if (result.error) {
-        throw new Error(`Error de Odoo: ${result.error.data?.message || result.error.message}`);
+
+      if (!result || !result.uid) {
+        throw new Error("Credenciales de Odoo incorrectas");
       }
-      
-      if (result.result === false) {
-        throw new Error("Credenciales de Odoo incorrectas (Usuario, Base de datos o API Key)");
-      }
-      
-      return result.result;
+
+      this.uid = result.uid;
+      return result.uid;
     } catch (e: any) {
       console.error("Auth error", e);
+      // Intentar método común si el de sesión falla (fallback)
+      try {
+        const result = await this.callRaw('/jsonrpc', {
+          service: 'common',
+          method: 'authenticate',
+          args: [this.config.db, this.config.username, this.config.apiKey, {}]
+        });
+        if (result) {
+          this.uid = result;
+          return result;
+        }
+      } catch {}
       throw e;
     }
   }
 
   async getEmployees(): Promise<OdooEmployee[]> {
-    const uid = await this.authenticate();
-    if (!uid) throw new Error("No se pudo autenticar con Odoo");
+    if (!this.uid) await this.authenticate();
 
-    return this.call('hr.employee', 'search_read', [
-      [['active', '=', true]]
-    ], {
-      fields: ['id', 'name', 'display_name', 'department_id']
+    return this.callRaw('/jsonrpc', {
+      service: 'object',
+      method: 'execute_kw',
+      args: [
+        this.config.db,
+        this.uid,
+        this.config.apiKey,
+        'hr.employee',
+        'search_read',
+        [[['active', '=', true]]],
+        { fields: ['id', 'name', 'display_name', 'department_id'] }
+      ]
     });
   }
 
   async registerAttendance(payload: AttendancePayload) {
-    const uid = await this.authenticate();
-    if (!uid) throw new Error("No se pudo autenticar con Odoo");
+    if (!this.uid) await this.authenticate();
 
-    return this.call('hr.attendance', 'create', [payload]);
+    return this.callRaw('/jsonrpc', {
+      service: 'object',
+      method: 'execute_kw',
+      args: [
+        this.config.db,
+        this.uid,
+        this.config.apiKey,
+        'hr.attendance',
+        'create',
+        [payload]
+      ]
+    });
   }
 }
