@@ -32,7 +32,7 @@ common.methodCall('authenticate', [ODOO_CONFIG.db, ODOO_CONFIG.username, ODOO_CO
         ODOO_CONFIG.db,
         uid,
         ODOO_CONFIG.apiKey,
-        'name',
+        'hr.employee',
         'search_read',
         [[]],
         { fields: ['name', 'display_name', 'department_id'], limit: 5 }
