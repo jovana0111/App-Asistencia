@@ -24,14 +24,19 @@ FROM nginx:alpine
 # Copiar los archivos construidos a la carpeta de nginx
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Copiar configuración personalizada de nginx para manejar rutas de React (SPA)
-RUN echo "server { \
-    listen 80; \
-    location / { \
-        root /usr/share/nginx/html; \
-        index index.html index.htm; \
-        try_files \$uri \$uri/ /index.html; \
-    } \
+# Copiar configuración personalizada de nginx para manejar rutas de React (SPA) y proxy Odoo
+RUN echo "server { \n\
+    listen 80; \n\
+    location /odoo-api/ { \n\
+        proxy_pass https://srv.seishin.com.mx/; \n\
+        proxy_set_header Host srv.seishin.com.mx; \n\
+        proxy_ssl_server_name on; \n\
+    } \n\
+    location / { \n\
+        root /usr/share/nginx/html; \n\
+        index index.html index.htm; \n\
+        try_files \$uri \$uri/ /index.html; \n\
+    } \n\
 }" > /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
