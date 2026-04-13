@@ -6,16 +6,6 @@ import {
   useEffect,
   useState,
 } from "react";
-import { OdooConfig, OdooService, AttendancePayload } from "../utils/odoo";
-
-// --- CONFIGURACIÓN DE ODOO ---
-const ODOO_CONFIG: OdooConfig = {
-  // En desarrollo usamos el proxy definido en vite.config.ts para evitar errores de CORS
-  url: (import.meta as any).env.VITE_ODOO_URL || (import.meta as any).env.DEV ? "/odoo-api" : "https://srv.seishin.com.mx",
-  db: (import.meta as any).env.VITE_ODOO_DB || "testcont1",
-  username: (import.meta as any).env.VITE_ODOO_USERNAME || "admin",
-  apiKey: (import.meta as any).env.VITE_ODOO_API_KEY || "1234",
-};
 
 export interface Area {
   id: string;
@@ -28,6 +18,7 @@ export interface Empleado {
   areaId: string;
   display_name?: string;
   odooId?: number;
+  work_phone?: string;
 }
 
 export interface RegistroAsistencia {
@@ -68,8 +59,6 @@ const STORAGE_KEYS = {
   REGISTROS: "asistencia_registros",
 };
 
-const odoo = new OdooService(ODOO_CONFIG);
-
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [areas, setAreas] = useState<Area[]>([]);
   const [empleados, setEmpleados] = useState<Empleado[]>([]);
@@ -102,11 +91,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     setOdooError(null);
     try {
-      const odooEmployees = await odoo.getEmployees();
-
+      const response = await fetch('/api/empleados');
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.details || errData.error || "Error al conectar con el servidor proxy");
+      }
+      
+      const odooEmployees: any[] = await response.json();
+      
       const newAreas = [...areas];
       const newEmpleados: Empleado[] = odooEmployees.map(oe => {
-        const areaName = oe.department_id ? oe.department_id[1] : "GENERAL";
+        const areaName = (oe.department_id && oe.department_id[1]) ? oe.department_id[1] : "GENERAL";
         let area = newAreas.find(a => a.nombre === areaName);
         if (!area) {
           area = { id: Date.now().toString() + Math.random(), nombre: areaName };
@@ -118,7 +113,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           nombre: oe.display_name || oe.name,
           display_name: oe.display_name,
           areaId: area.id,
-          odooId: oe.id
+          odooId: oe.id,
+          work_phone: oe.work_phone
         };
       });
 
@@ -148,7 +144,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Helper para metadata de producción
   const getProductionMetadata = async () => {
-    const meta: Partial<AttendancePayload> = {
+    const meta: any = {
       in_browser: navigator.userAgent.substring(0, 60),
       in_mode: 'browser',
     };
@@ -200,21 +196,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const addRegistro = useCallback(
     async (registro: RegistroAsistencia) => {
       let updatedRegistro = { ...registro };
-
+      
       const emp = empleados.find(e => e.id === registro.empleadoId);
       if (emp?.odooId) {
         try {
           const checkIn = registro.entrada.length === 16 ? `${registro.entrada}:00` : registro.entrada;
           const checkOut = registro.salida.length === 16 ? `${registro.salida}:00` : registro.salida;
-
+          
           const meta = await getProductionMetadata();
-
-          await odoo.registerAttendance({
-            employee_id: emp.odooId,
-            check_in: checkIn,
-            check_out: checkOut,
-            ...meta
+          
+          const response = await fetch('/api/asistencia', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              employee_id: emp.odooId,
+              check_in: checkIn,
+              check_out: checkOut,
+              ...meta
+            })
           });
+
+          if (!response.ok) throw new Error("Fallo en sincronización");
+          
           updatedRegistro.odooSync = true;
         } catch (e) {
           console.error("Error sincronizando con Odoo", e);
@@ -317,4 +320,3 @@ export function useApp() {
   if (!ctx) throw new Error("useApp must be used within AppProvider");
   return ctx;
 }
-

@@ -20,10 +20,9 @@ export default defineConfig({
       overlay: false
     },
     proxy: {
-      '/odoo-api': {
+      '/api': {
         target: 'https://srv.seishin.com.mx/',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/odoo-api/, ''),
       },
     }
   },
