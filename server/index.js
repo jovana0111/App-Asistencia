@@ -12,7 +12,7 @@ app.use(express.json());
 const ODOO_CONFIG = {
     host: 'srv.seishin.com.mx',
     port: 443,
-    db: 'contab_test',
+    db: 'testcont1',
     username: 'admin',
     apiKey: '1234'
 };

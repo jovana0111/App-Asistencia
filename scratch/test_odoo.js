@@ -26,13 +26,13 @@ common.methodCall('authenticate', [ODOO_CONFIG.db, ODOO_CONFIG.username, ODOO_CO
     console.log('✅ AUTENTICACIÓN EXITOSA. UID:', uid);
 
     const models = xmlrpc.createSecureClient({ host: ODOO_CONFIG.url, port: ODOO_CONFIG.port, path: '/xmlrpc/2/object' });
-    
+
     console.log('Consultando empleados...');
     models.methodCall('execute_kw', [
         ODOO_CONFIG.db,
         uid,
         ODOO_CONFIG.apiKey,
-        'hr.employee',
+        'name',
         'search_read',
         [[]],
         { fields: ['name', 'display_name', 'department_id'], limit: 5 }
