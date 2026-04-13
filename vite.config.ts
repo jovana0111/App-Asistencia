@@ -12,11 +12,19 @@ export default defineConfig({
       "react-native": "react-native-web",
     },
   },
+
   server: {
     port: 3000,
     open: true,
     hmr: {
       overlay: false
+    },
+    proxy: {
+      '/odoo-api': {
+        target: 'http://localhost:8069', // Cambia esto por tu URL de Odoo
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/odoo-api/, ''),
+      },
     }
   },
   build: {
