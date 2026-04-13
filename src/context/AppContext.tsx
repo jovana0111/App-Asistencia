@@ -7,6 +7,19 @@ import {
   useState,
 } from "react";
 
+import { OdooConfig, OdooService, AttendancePayload } from "../utils/odoo";
+
+// --- CONFIGURACIÓN DE ODOO ---
+const ODOO_CONFIG: OdooConfig = {
+  // En desarrollo usamos el proxy definido en vite.config.ts para evitar errores de CORS
+  url: (import.meta as any).env.VITE_ODOO_URL || (import.meta as any).env.DEV ? "/odoo-api" : "https://srv.seishin.com.mx",
+  db: (import.meta as any).env.VITE_ODOO_DB || "testcont1",
+  username: (import.meta as any).env.VITE_ODOO_USERNAME || "admin",
+  apiKey: (import.meta as any).env.VITE_ODOO_API_KEY || "0ecd94a3226d0492385157f6d18cb468d4108d26",
+};
+
+const odoo = new OdooService(ODOO_CONFIG);
+
 export interface Area {
   id: string;
   nombre: string;
@@ -91,13 +104,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     setOdooError(null);
     try {
-      const response = await fetch('/api/empleados');
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.details || errData.error || "Error al conectar con el servidor proxy");
-      }
-      
-      const odooEmployees: any[] = await response.json();
+      const odooEmployees = await odoo.getEmployees();
       
       const newAreas = [...areas];
       const newEmpleados: Empleado[] = odooEmployees.map(oe => {
@@ -205,19 +212,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           
           const meta = await getProductionMetadata();
           
-          const response = await fetch('/api/asistencia', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              employee_id: emp.odooId,
-              check_in: checkIn,
-              check_out: checkOut,
-              ...meta
-            })
+          await odoo.registerAttendance({
+            employee_id: emp.odooId,
+            check_in: checkIn,
+            check_out: checkOut,
+            ...meta
           });
 
-          if (!response.ok) throw new Error("Fallo en sincronización");
-          
           updatedRegistro.odooSync = true;
         } catch (e) {
           console.error("Error sincronizando con Odoo", e);

@@ -11,6 +11,9 @@ export interface OdooEmployee {
   name: string;
   display_name: string;
   department_id: [number, string] | false;
+  work_phone?: string;
+  barcode?: string;
+  job_id?: [number, string] | false;
 }
 
 export interface AttendancePayload {
@@ -104,7 +107,7 @@ export class OdooService {
         'hr.employee',
         'search_read',
         [[['active', '=', true]]],
-        { fields: ['id', 'name', 'display_name', 'department_id'] }
+        { fields: ['id', 'name', 'display_name', 'department_id', 'work_phone', 'barcode', 'job_id'] }
       ]
     });
   }
