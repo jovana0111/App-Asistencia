@@ -12,9 +12,9 @@ import { OdooConfig, OdooService, AttendancePayload } from "../utils/odoo";
 // Se recomienda usar variables de entorno (VITE_ODOO_*) para mayor seguridad en producción
 const ODOO_CONFIG: OdooConfig = {
   url: (import.meta as any).env.VITE_ODOO_URL || "https://tu-odoo.odoo.com",
-  db: (import.meta as any).env.VITE_ODOO_DB || "tu_base_de_datos",
-  username: (import.meta as any).env.VITE_ODOO_USERNAME || "tu_usuario@email.com",
-  apiKey: (import.meta as any).env.VITE_ODOO_API_KEY || "tu_api_key_o_password",
+  db: (import.meta as any).env.VITE_ODOO_DB || "testcont1",
+  username: (import.meta as any).env.VITE_ODOO_USERNAME || "admin",
+  apiKey: (import.meta as any).env.VITE_ODOO_API_KEY || "1234",
 };
 
 export interface Area {
@@ -95,7 +95,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setAreas(loadedAreas);
       setEmpleados(loadedEmpleados);
       setRegistros(loadedRegistros);
-    } catch {}
+    } catch { }
   };
 
   const refreshOdooEmployees = async () => {
@@ -108,7 +108,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setOdooError(null);
     try {
       const odooEmployees = await odoo.getEmployees();
-      
+
       const newAreas = [...areas];
       const newEmpleados: Empleado[] = odooEmployees.map(oe => {
         const areaName = oe.department_id ? oe.department_id[1] : "GENERAL";
@@ -161,15 +161,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       const ipRes = await fetch('https://api.ipify.org?format=json').then(r => r.json());
       meta.in_ip_address = ipRes.ip;
-    } catch {}
+    } catch { }
 
     try {
-      const pos = await new Promise<GeolocationPosition>((res, rej) => 
+      const pos = await new Promise<GeolocationPosition>((res, rej) =>
         navigator.geolocation.getCurrentPosition(res, rej, { timeout: 5000 })
       );
       meta.in_latitude = pos.coords.latitude;
       meta.in_longitude = pos.coords.longitude;
-    } catch {}
+    } catch { }
 
     return meta;
   };
@@ -205,15 +205,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const addRegistro = useCallback(
     async (registro: RegistroAsistencia) => {
       let updatedRegistro = { ...registro };
-      
+
       const emp = empleados.find(e => e.id === registro.empleadoId);
       if (emp?.odooId) {
         try {
           const checkIn = registro.entrada.length === 16 ? `${registro.entrada}:00` : registro.entrada;
           const checkOut = registro.salida.length === 16 ? `${registro.salida}:00` : registro.salida;
-          
+
           const meta = await getProductionMetadata();
-          
+
           await odoo.registerAttendance({
             employee_id: emp.odooId,
             check_in: checkIn,
