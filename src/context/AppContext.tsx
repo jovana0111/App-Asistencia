@@ -11,8 +11,8 @@ import { OdooConfig, OdooService } from "../utils/odoo";
 
 // --- CONFIGURACIÓN DE ODOO ---
 const ODOO_CONFIG: OdooConfig = {
-  // En desarrollo usamos el proxy definido en vite.config.ts para evitar errores de CORS
-  url: (import.meta as any).env.VITE_ODOO_URL || (import.meta as any).env.DEV ? "/odoo-api" : "https://srv.seishin.com.mx",
+  // Usamos siempre el proxy relativo. En dev lo maneja Vite, en prod lo maneja NGINX.
+  url: (import.meta as any).env.VITE_ODOO_URL || "/odoo-api",
   db: (import.meta as any).env.VITE_ODOO_DB || "testcont1",
   username: (import.meta as any).env.VITE_ODOO_USERNAME || "admin",
   apiKey: (import.meta as any).env.VITE_ODOO_API_KEY || "0ecd94a3226d0492385157f6d18cb468d4108d26",
