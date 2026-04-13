@@ -1,7 +1,6 @@
 import { Grid, User, Users, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import {
-  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,7 +10,7 @@ import {
 } from "react-native";
 import logo from "../../assets/images/logo.png";
 
-import { useApp, Empleado } from "../context/AppContext";
+import { useApp } from "../context/AppContext";
 import { useColors } from "../hooks/useColors";
 
 export default function EmpleadosScreen() {
@@ -20,10 +19,6 @@ export default function EmpleadosScreen() {
   const { 
     areas, 
     empleados, 
-    addArea, 
-    addEmpleado, 
-    updateEmpleado, 
-    deleteEmpleado, 
     refreshOdooEmployees,
     loading,
     odooError 
