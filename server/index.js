@@ -14,7 +14,7 @@ const ODOO_CONFIG = {
     port: 443,
     db: 'testcont1',
     username: 'admin',
-    apiKey: '1234'
+    apiKey: '0ecd94a3226d0492385157f6d18cb468d4108d26'
 };
 
 // Clientes XML-RPC robustos
@@ -57,7 +57,7 @@ app.get('/api/empleados', (req, res) => {
                 return res.status(500).json({ error: 'Error al leer empleados', details: err.message });
             }
             console.log(`Enviando ${employees.length} empleados.`);
-            res.json(employees);
+            res.json({ empleados: employees });
         });
     });
 });
@@ -86,15 +86,6 @@ app.post('/api/asistencia', (req, res) => {
             res.json({ success: true, id: result });
         });
     });
-});
-
-// Servir App en Producción
-const DIST_PATH = path.join(__dirname, '../dist');
-app.use(express.static(DIST_PATH));
-app.get('(.*)', (req, res) => {
-    if (!req.path.startsWith('/api')) {
-        res.sendFile(path.join(DIST_PATH, 'index.html'));
-    }
 });
 
 const PORT = process.env.PORT || 3001;
